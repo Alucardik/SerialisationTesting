@@ -1,5 +1,5 @@
 const { formats } = require('./config');
-const Tester = require('./tester');
+const Tester = require('./utils/tester');
 
 const fs = require('fs');
 
@@ -14,15 +14,22 @@ async function main() {
         serialisationRuns[format] = testers[format].serialise();
     });
 
+
     while (Object.keys(serialisationRuns).length) {
+        // TODO: maybe move try-catch block to a separate function
         try {
-            const { format, cycleTime } = await Promise.any(Object.values(serialisationRuns));
-            console.log('cool', cycleTime);
+            const { format, stats } = await Promise.any(Object.values(serialisationRuns));
+            console.log(`${format} serialiser stats`, stats);
             delete serialisationRuns[format];
             deserialisationRuns[format] = testers[format].deserialise();
         } catch (e) {
-            e.errors.forEach(({ format }) => {
-                console.log(format, 'fucked up')
+            const errors = [];
+            // TODO: add normal logging
+            console.log('Errs in main', e);
+            // we can encounter a single error or an array of errors
+            e.errors ? errors.push(...e.errors) : errors.push(e);
+            errors.forEach(({ format }) => {
+                console.log(format, 'serialiser fucked up')
                 delete serialisationRuns[format];
             });
         }
@@ -30,12 +37,12 @@ async function main() {
 
     while (Object.keys(deserialisationRuns).length) {
         try {
-            const { format, cycleTime } = await Promise.any(Object.values(deserialisationRuns));
-            console.log('cool', cycleTime);
+            const { format, stats } = await Promise.any(Object.values(deserialisationRuns));
+            console.log(`${format} deserialiser stats`, stats);
             delete deserialisationRuns[format];
         } catch (e) {
             e.errors.forEach(({ format }) => {
-                console.log(format, 'fucked up')
+                console.log(format, ' deserialiser fucked up')
                 delete deserialisationRuns[format];
             });
         }
@@ -43,4 +50,4 @@ async function main() {
 
 }
 
-main();
+main().then();

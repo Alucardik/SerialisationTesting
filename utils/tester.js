@@ -29,11 +29,13 @@ const sampleObj2 = {
 };
 
 class Tester {
-    constructor(format, samples = [sampleObj1, sampleObj2], testFilePath = `./test_data/${format}`) {
-        this._format = format;
+    constructor(format, samples = [sampleObj1, sampleObj2], testFilePath = `./test_data/${format.toUpperCase()}`) {
+        this._format = format.toUpperCase();
+        this._samples = samples;
         switch (this._format) {
             case 'JSON':
-                this._stdSerialiser = JSON;
+                this._stdSerialiser = JSON.stringify;
+                this._stdDeserialiser = JSON.parse;
                 this._altSerialiser = undefined;
                 break;
             case 'YAML':
@@ -56,38 +58,67 @@ class Tester {
                 this._stdSerialiser = undefined;
                 this._altSerialiser = undefined;
                 break;
+            default:
+                throw Error('Provided format is not supported');
         }
+    }
+
+    // TODO: learn about enum in js
+    // mode: 'serialize' | 'deserialise'
+    async _runTest(mode, numberOfRuns) {
+        const sampleRuns = {};
+        const stats = [];
+        if (this._format === 'XML') {
+            const err = new Error(`${this._format} is not supported`);
+            err.format = this._format;
+            throw err;
+        }
+        this._samples.forEach((sample, ind) => {
+            sampleRuns[ind] = (async () => {
+                let meanTime = 0;
+                for (let i = 0; i < numberOfRuns; ++i) {
+                    const startTimestamp = perfHooks.performance.now();
+                    mode === 'serialise' ?
+                        this._stdSerialiser(sample) :
+                        // TODO: load from file?
+                        this._stdDeserialiser(this._stdSerialiser(sample));
+                    meanTime += perfHooks.performance.now() - startTimestamp;
+                }
+
+                return {
+                    ind,
+                    sampleSize: sizeof(sample),
+                    meanCycleTime: meanTime / numberOfRuns,
+                };
+            })();
+        });
+
+        while (Object.keys(sampleRuns).length) {
+            try {
+                const { ind, ...data } = await Promise.any(Object.values(sampleRuns).values());
+                stats.push(data);
+                delete sampleRuns[ind];
+            } catch (e) {
+                throw e;
+            }
+        }
+
+        return {
+            format: this._format,
+            stats,
+        };
+    }
+
+    async serialise(numberOfRuns = 1000) {
+        return await this._runTest('serialise', numberOfRuns);
+    }
+
+    async deserialise(numberOfRuns = 1000) {
+        return this._runTest('deserialise', numberOfRuns);
     }
 
     getFormat() {
         return this._format;
-    }
-
-    async serialise() {
-        const startTimestamp = perfHooks.performance.now();
-        console.log('IM ', this._format, 'parser');
-        if (this.getFormat() === 'XML') {
-            const err = new Error('Some error');
-            err.format = this._format;
-            throw err;
-        }
-        // if (parseInt(Math.round(Math.random())) % 2) {
-        //     const err = new Error('Some error');
-        //     err.format = this._format;
-        //     throw err;
-        // }
-        return {
-            format: this._format,
-            cycleTime: perfHooks.performance.now() - startTimestamp,
-        }
-    }
-
-    async deserialise() {
-        const startTimestamp = perfHooks.performance.now(); // in ms
-        return {
-            format: this._format,
-            cycleTime: perfHooks.performance.now() - startTimestamp,
-        }
     }
 }
 
