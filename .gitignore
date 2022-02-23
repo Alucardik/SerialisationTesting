@@ -1,2 +1,9 @@
+# ide
 /.idea
+
+# npm and node
 /node_modules
+
+# tests
+/test_data
+
