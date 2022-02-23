@@ -1,8 +1,6 @@
 const { formats, numberOfRuns } = require('./config');
 const Tester = require('./utils/tester');
 
-const fs = require('fs');
-
 async function main() {
     const serialisationRuns = {};
     const deserialisationRuns = {};

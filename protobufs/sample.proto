@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+message sampleStruct1 {
+  int64 integer = 1;
+  float float = 2;
+  string stringData = 3;
+  repeated int64 array = 4;
+}
+
+message sampleStruct2 {
+  int64 integer = 1;
+  float float = 2;
+  string stringData = 3;
+  repeated int64 array = 4;
+
+  string extendedStringData = 5;
+  sampleStruct1 nested = 6;
+}
