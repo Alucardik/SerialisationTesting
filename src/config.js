@@ -1,4 +1,4 @@
-const formats = ['JSON', 'XML', 'PROTO'];
+const formats = ['JSON', 'XML', 'PROTO', 'YAML'];
 const numberOfRuns = 1000;
 
 module.exports = {

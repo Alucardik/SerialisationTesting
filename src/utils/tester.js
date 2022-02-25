@@ -7,6 +7,7 @@ const sizeof = require('object-sizeof');
 // -- parsers
 const { Builder: xmlSerialiser, Parser: xmlDeserialiser } = require('xml2js');
 const protobuf = require('protobufjs');
+const yaml = require('yaml');
 
 // -- constants
 const { formatFileMappings } = require('./formatMappings');
@@ -16,6 +17,7 @@ const floats = [...Array(100).keys()].map((number) => {
     return number + Math.random();
 });
 
+// TODO: move samples elsewhere
 const sampleObj1 = {
     integer:  112,
     float: 112.45,
@@ -51,8 +53,8 @@ class Tester {
                 this._deserialiser = JSON.parse;
                 break;
             case 'YAML':
-                this._serialiser = undefined;
-                this._deserialiser = undefined;
+                this._serialiser = yaml.stringify;
+                this._deserialiser = yaml.parse;
                 break;
             case 'XML':
                 const serialiser = new xmlSerialiser();
