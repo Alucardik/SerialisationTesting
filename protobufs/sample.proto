@@ -14,5 +14,5 @@ message sampleStruct2 {
   repeated int64 array = 4;
 
   string extendedStringData = 5;
-  sampleStruct1 nested = 6;
+  sampleStruct1 nested1 = 6;
 }

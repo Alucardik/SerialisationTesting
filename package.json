@@ -10,7 +10,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "avro-js": "^1.11.0",
     "object-sizeof": "^1.6.3",
-    "xml2js": "^0.4.23"
+    "protobufjs": "^6.11.2",
+    "xml2js": "^0.4.23",
+    "yaml": "^1.10.2"
   }
 }

@@ -36,7 +36,10 @@ async function main() {
             console.log(`${format} deserialiser stats`, stats);
             delete deserialisationRuns[format];
         } catch (e) {
-            e.errors.forEach(({ format, message }) => {
+            const errors = [];
+            // we can encounter a single error or an array of errors
+            e.errors ? errors.push(...e.errors) : errors.push(e);
+            errors.forEach(({ format, message }) => {
                 console.log(format, ' deserialiser failed');
                 console.log('Error', message);
                 delete deserialisationRuns[format];

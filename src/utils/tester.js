@@ -6,6 +6,7 @@ const sizeof = require('object-sizeof');
 
 // -- parsers
 const { Builder: xmlSerialiser, Parser: xmlDeserialiser } = require('xml2js');
+const protobuf = require('protobufjs');
 
 // -- constants
 const { formatFileMappings } = require('./formatMappings');
@@ -32,15 +33,16 @@ const sampleObj2 = {
                      у тебя башка после амнезии прояснится. А по твоей теме постараюсь разузнать.
                      Хрен его знает, на кой ляд тебе этот Стрелок сдался, но я в чужие дела не лезу,
                      хочешь убить, значит есть за что…`,
-    nested: {
+    nested1: {
         ...sampleObj1
     },
 };
 
 class Tester {
-    constructor(format, samples = [sampleObj1, sampleObj2], testDataPath = `${__dirname}/../test_data/${format.toUpperCase()}`) {
+    // testDataPath - path for saving serialised files
+    constructor(format, testDataPath = `${__dirname}/../../test_data/${format.toUpperCase()}`) {
         this._format = format.toUpperCase();
-        this._samples = samples;
+        this._samples = [sampleObj1, sampleObj2];
         // fs module works with the absolute paths
         this._dataPath = testDataPath.startsWith('/') ? testDataPath : `${__dirname}/${testDataPath}`;
         switch (this._format) {
@@ -58,12 +60,19 @@ class Tester {
                 this._deserialiser = new xmlDeserialiser().parseString;
                 break;
             case 'PROTO':
-                this._serialiser = undefined;
-                this._deserialiser = undefined;
+                // fill be filed in the _postInitLoader method
+                this._deserialiser = {};
+                this._serialiser = {};
+                try {
+                    // TODO: maybe wrap path into a separate var
+                    this._postInit = protobuf.load(__dirname + '../../../protobufs/sample.proto');
+                } catch (e) {
+                    throw this._constructError(e);
+                }
                 break;
             case 'AVRO':
                 this._serialiser = undefined;
-                this._serialiser = undefined;
+                this._deserialiser = undefined;
                 break;
             case 'MSGPACK':
                 this._serialiser = undefined;
@@ -78,6 +87,34 @@ class Tester {
         // can add extra fields for debugging here
         e.format = this._format;
         return e;
+    }
+
+    // execute some code (mostly asynchronous) after constructor
+    // (e.g. some libraries are asynchronous, so they cannot be executed in the constructor)
+    async _postInitLoader() {
+        switch (this._format) {
+            case 'PROTO':
+                try {
+                    const root = await this._postInit;
+
+                    // we need to convert standard JS objects to protobuf structs
+                    this._samples = this._samples.map((sample, ind) => {
+                        const protoMsg = root.lookupType(`sampleStruct${ind + 1}`);
+                        const e = protoMsg.verify(sample);
+                        if (e) {
+                            throw this._constructError(e);
+                        }
+                        this._serialiser[ind] = protoMsg.encode;
+                        this._deserialiser[ind] = protoMsg.decode.bind(protoMsg);
+                        return protoMsg.create(sample);
+                    });
+                } catch (e) {
+                    throw this._constructError(e);
+                }
+                break;
+            default:
+                return;
+        }
     }
 
     _getSamplePath(sampleIndex) {
@@ -96,8 +133,18 @@ class Tester {
                 }
             }
 
+            let buf;
+            let encoding;
+            if (this._format === 'PROTO') {
+                encoding = 'binary';
+                buf = this._serialiser[ind](sample).finish();
+            } else {
+                encoding = 'utf8';
+                buf = Buffer.from(this._serialiser(sample), encoding);
+            }
+
             try {
-                fs.writeFileSync(this._getSamplePath(ind), Buffer.from(this._serialiser(sample), 'utf8'));
+                fs.writeFileSync(this._getSamplePath(ind), buf, encoding);
             } catch (e) {
                 throw this._constructError(e);
             }
@@ -108,6 +155,11 @@ class Tester {
     async _runTest(mode, numberOfRuns) {
         const sampleRuns = {};
         const stats = [];
+        let encoding;
+        (this._format === 'PROTO') ?
+            encoding = 'binary' :
+            encoding = 'utf8';
+
         for (let i = 0; i < this._samples.length; ++i) {
             sampleRuns[i] = (async () => {
                 let meanTime = 0;
@@ -116,15 +168,19 @@ class Tester {
                 for (let j = 0; j < numberOfRuns; ++j) {
                     const startTimestamp = perfHooks.performance.now();
                     if (mode === 'serialise') {
-                        this._serialiser(this._samples[i]);
+                        // in protobufs serialisers / deserialisers are created per each message type
+                        (this._format === 'PROTO') ?
+                            this._serialiser[i](this._samples[i]).finish() :
+                            this._serialiser(this._samples[i]);
                     } else {
                         try {
-                            struct = fs.readFileSync(this._getSamplePath(i), { encoding: 'utf8' });
-                            // console.log('HEY', struct);
+                            struct = fs.readFileSync(this._getSamplePath(i), { encoding });
                         } catch (e) {
                             throw this._constructError(e);
                         }
-                        this._deserialiser(struct);
+                        (this._format === 'PROTO') ?
+                            this._deserialiser[i](Buffer.from(struct, encoding)) :
+                            this._deserialiser(struct);
                     }
                     meanTime += perfHooks.performance.now() - startTimestamp;
                 }
@@ -155,6 +211,7 @@ class Tester {
     }
 
     async serialise(numberOfRuns = 100) {
+        await this._postInitLoader();
         this._updateFiles();
         return await this._runTest('serialise', numberOfRuns);
     }
