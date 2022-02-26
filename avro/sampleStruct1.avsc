@@ -1,0 +1,24 @@
+{
+  "type": "record",
+  "name": "sampleStruct1",
+  "namespace": "sample.structs",
+  "fields": [
+    {
+      "name": "structId",
+      "type": "long"
+    },
+    {
+      "name": "integer",
+      "type": "long"
+    },
+    {
+      "name": "float",
+      "type": "double"
+    },
+    {
+      "name": "stringData",
+      "type": "string"
+    }
+  ]
+}
+

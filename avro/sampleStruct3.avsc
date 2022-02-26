@@ -1,0 +1,103 @@
+{
+  "type": "record",
+  "name": "sampleStruct3",
+  "namespace": "sample.structs",
+  "fields": [
+    {
+      "name": "structId",
+      "type": "long"
+    },
+    {
+      "name": "integer",
+      "type": "long"
+    },
+    {
+      "name": "float",
+      "type": "double"
+    },
+    {
+      "name": "stringData",
+      "type": "string"
+    },
+    {
+      "name": "extendedStringData",
+      "type": "string"
+    },
+    {
+      "name": "arrayInt",
+      "type": {
+        "type": "array",
+        "items": "long"
+      }
+    },
+    {
+      "name": "arrayFloat",
+      "type": {
+        "type": "array",
+        "items": "double"
+      }
+    },
+    {
+      "name": "dict1",
+      "type": {
+        "type": "record",
+        "name": "sampleStruct1",
+        "namespace": "sample.structs",
+        "fields": [
+          {
+            "name": "integer",
+            "type": "long"
+          },
+          {
+            "name": "float",
+            "type": "double"
+          },
+          {
+            "name": "stringData",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "dict2",
+      "type": {
+        "type": "record",
+        "name": "sampleStruct2",
+        "namespace": "sample.structs",
+        "fields": [
+          {
+            "name": "integer",
+            "type": "long"
+          },
+          {
+            "name": "float",
+            "type": "double"
+          },
+          {
+            "name": "stringData",
+            "type": "string"
+          },
+          {
+            "name": "extendedStringData",
+            "type": "string"
+          },
+          {
+            "name": "arrayInt",
+            "type": {
+              "type": "array",
+              "items": "long"
+            }
+          },
+          {
+            "name": "arrayFloat",
+            "type": {
+              "type": "array",
+              "items": "double"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

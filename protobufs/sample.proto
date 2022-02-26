@@ -1,18 +1,32 @@
 syntax = "proto3";
 
 message sampleStruct1 {
-  int64 integer = 1;
-  float float = 2;
-  string stringData = 3;
-  repeated int64 array = 4;
+  int64 structId = 1;
+  int64 integer = 2;
+  double float = 3;
+  string stringData = 4;
 }
 
 message sampleStruct2 {
-  int64 integer = 1;
-  float float = 2;
-  string stringData = 3;
-  repeated int64 array = 4;
+  int64 structId = 1;
+  int64 integer = 2;
+  double float = 3;
+  string stringData = 4;
 
-  string extendedStringData = 5;
-  sampleStruct1 nested1 = 6;
+  repeated int64 arrayInt = 5;
+  repeated double arrayFloat = 6;
+  string extendedStringData = 7;
+}
+
+message sampleStruct3 {
+  int64 structId = 1;
+  int64 integer = 2;
+  double float = 3;
+  string stringData = 4;
+  repeated int64 arrayInt = 5;
+  repeated double arrayFloat = 6;
+  string extendedStringData = 7;
+
+  sampleStruct1 dict1 = 8;
+  sampleStruct2 dict2 = 9;
 }
