@@ -10,7 +10,7 @@ const { Builder: xmlSerialiser, Parser: xmlDeserialiser } = require('xml2js');
 const protobuf = require('protobufjs');
 const yaml = require('yaml');
 const avro = require('avro-js');
-// const msgpack = require('msgpack');
+const msgpack = require('msgpack');
 
 // -- constants
 const { formatFileMappings } = require('../constants/formatMappings');
@@ -67,11 +67,11 @@ class Tester {
                 })();
                 break;
             case 'MSGPACK':
-                this._serialiser = undefined;
-                this._deserialiser = undefined;
+                this._serialiser = msgpack.pack;
+                this._deserialiser = msgpack.unpack;
                 break;
             default:
-                throw this._constructError(Error('Provided format is not supported'));
+                throw this._constructError(Error(`${this._format}: provided format is not supported`));
         }
     }
 
@@ -140,6 +140,9 @@ class Tester {
             } else if (this._format === 'AVRO') {
                 encoding = 'binary';
                 buf = this._serialiser[ind](sample);
+            } else if (this._format === 'MSGPACK') {
+                encoding = 'binary';
+                buf = this._serialiser(sample);
             } else {
                 encoding = 'utf8';
                 buf = Buffer.from(this._serialiser(sample), encoding);
@@ -158,7 +161,7 @@ class Tester {
         const sampleRuns = {};
         const stats = [];
         let encoding;
-        (this._format === 'PROTO' || this._format === 'AVRO') ?
+        (this._format === 'PROTO' || this._format === 'AVRO' || this._format === 'MSGPACK') ?
             encoding = 'binary' :
             encoding = 'utf8';
 
@@ -184,9 +187,13 @@ class Tester {
                     } else {
                         try {
                             struct = fs.readFileSync(this._getSamplePath(i), { encoding });
-                            (this._format === 'PROTO' || this._format === 'AVRO') ?
-                                this._deserialiser[i](Buffer.from(struct, encoding)) :
+                            if (this._format === 'PROTO' || this._format === 'AVRO' ) {
+                                this._deserialiser[i](Buffer.from(struct, encoding));
+                            } else if (this._format === 'MSGPACK') {
+                                this._deserialiser(Buffer.from(struct, encoding));
+                            } else {
                                 this._deserialiser(struct);
+                            }
                         } catch (e) {
                             throw this._constructError(e);
                         }
