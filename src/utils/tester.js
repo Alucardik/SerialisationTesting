@@ -1,4 +1,3 @@
-
 // -- system imports
 const fs = require('fs');
 const { Buffer } = require('buffer');
@@ -168,6 +167,8 @@ class Tester {
         for (let i = 0; i < this._samples.length; ++i) {
             sampleRuns[i] = (async () => {
                 let meanTime = 0;
+                const initialSampleSize = sizeof(this._samples[i]);
+                let tmpObj = undefined;
                 // save file content here in case of deserialisation
                 let struct;
                 for (let j = 0; j < numberOfRuns; ++j) {
@@ -176,13 +177,13 @@ class Tester {
                         // in protobufs and avro serialisers / deserialisers are created per each struct type
                         switch (this._format) {
                             case 'PROTO':
-                                this._serialiser[i](this._samples[i]).finish();
+                                tmpObj = this._serialiser[i](this._samples[i]).finish();
                                 break;
                             case 'AVRO':
-                                this._serialiser[i](this._samples[i]);
+                                tmpObj = this._serialiser[i](this._samples[i]);
                                 break;
                             default:
-                                this._serialiser(this._samples[i]);
+                                tmpObj = this._serialiser(this._samples[i]);
                         }
                     } else {
                         try {
@@ -201,10 +202,10 @@ class Tester {
                     meanTime += performance.now() - startTimestamp;
                 }
 
-                // TODO: correct stats
                 return {
                     index: i,
-                    sampleSize: sizeof(this._samples[i]),
+                    initialSampleSize,
+                    serialisedSampleSize: tmpObj ? Buffer.from(tmpObj, encoding).length : undefined,
                     meanCycleTime: meanTime / numberOfRuns,
                 };
             })();
@@ -234,10 +235,6 @@ class Tester {
 
     async deserialise(numberOfRuns = 100) {
         return this._runTest('deserialise', numberOfRuns);
-    }
-
-    getFormat() {
-        return this._format;
     }
 }
 

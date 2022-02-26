@@ -5,17 +5,22 @@ async function main() {
     const serialisationRuns = {};
     const deserialisationRuns = {};
     const testers = {};
+    const aggrStats = {};
 
     formats.forEach((format) => {
         testers[format] = new Tester(format);
         serialisationRuns[format] = testers[format].serialise(numberOfRuns);
+        aggrStats[format] = {
+            serialisation: {},
+            deserialisation: {},
+        };
     });
 
     while (Object.keys(serialisationRuns).length) {
-        // TODO: maybe move try-catch block to a separate function
         try {
             const { format, stats } = await Promise.any(Object.values(serialisationRuns));
-            console.log(`${format} serialiser stats`, stats);
+            aggrStats[format].serialisation = stats;
+            console.log(`${format}\tserialiser finished`);
             delete serialisationRuns[format];
             deserialisationRuns[format] = testers[format].deserialise(numberOfRuns);
         } catch (e) {
@@ -33,7 +38,8 @@ async function main() {
     while (Object.keys(deserialisationRuns).length) {
         try {
             const { format, stats } = await Promise.any(Object.values(deserialisationRuns));
-            console.log(`${format} deserialiser stats`, stats);
+            aggrStats[format].deserialisation = stats;
+            console.log(`${format}\tdeserialiser finished`);
             delete deserialisationRuns[format];
         } catch (e) {
             const errors = [];
@@ -47,6 +53,17 @@ async function main() {
         }
     }
 
+    for (let format in aggrStats) {
+        console.log(`\n--------------  ${format} STATS  --------------\n`);
+        for (let i = 0; i < aggrStats[format].serialisation.length; ++i) {
+            console.log(`  ## SAMPLE ${i + 1}:\n\n`,
+                `  - initial size(bytes):\t${aggrStats[format].serialisation[i].initialSampleSize}\n\n`,
+                `  - serialised size(bytes):\t${aggrStats[format].serialisation[i].serialisedSampleSize}\n\n`,
+                `  - mean serialisation time(ns):\t${aggrStats[format].serialisation[i].meanCycleTime * 10e6}\n\n`,
+                `  - mean deserialisation time(ns):\t${aggrStats[format].deserialisation[i].meanCycleTime * 10e6}\n\n`
+            );
+        }
+    }
 }
 
 main().then();
