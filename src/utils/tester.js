@@ -8,9 +8,12 @@ const sizeof = require('object-sizeof');
 const { Builder: xmlSerialiser, Parser: xmlDeserialiser } = require('xml2js');
 const protobuf = require('protobufjs');
 const yaml = require('yaml');
+const avro = require('avro-js');
+// TODO: run npm i
+// const msgpack = require('msgpack');
 
 // -- constants
-const { formatFileMappings } = require('./formatMappings');
+const { formatFileMappings } = require('../constants/formatMappings');
 
 const ints = [...Array(100).keys()];
 const floats = [...Array(100).keys()].map((number) => {
@@ -39,6 +42,29 @@ const sampleObj2 = {
         ...sampleObj1
     },
 };
+
+console.log('Prek', avro.parse({
+    name: 'sampleStruct1',
+    type: 'record',
+    fields: [
+        {
+            name: 'integer',
+            type: 'long',
+        },
+        {
+            name: 'float',
+            type: 'float',
+        },
+        {
+            name: 'stringData',
+            type: 'string',
+        },
+        {
+            name: 'myArray',
+            type: 'array',
+        }
+    ]
+}));
 
 class Tester {
     // testDataPath - path for saving serialised files
@@ -73,6 +99,10 @@ class Tester {
                 }
                 break;
             case 'AVRO':
+                this._serialiser = undefined;
+                this._deserialiser = undefined;
+                break;
+            case 'AVRO_SCHEME':
                 this._serialiser = undefined;
                 this._deserialiser = undefined;
                 break;

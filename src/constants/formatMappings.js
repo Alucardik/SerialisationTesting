@@ -3,6 +3,7 @@ const formatFileMappings = {
     XML: 'xml',
     PROTO: 'pb',
     YAML: 'yaml',
+    MSGPACK: 'bin',
 }
 
 module.exports = {
